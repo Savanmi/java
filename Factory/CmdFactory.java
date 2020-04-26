@@ -12,7 +12,7 @@ public class CmdFactory
 {
 
     private static Properties properties = null;
-    private static HashMap<String, Class> classes = null; // МОЖНО НЕ ТРИМЭП?
+    private static HashMap<String, Class> classes = null; 
 
     static {
         classes = new HashMap<>();
@@ -48,13 +48,12 @@ public class CmdFactory
             throw new NoSuchElementException("Invalid command request: " + commandUp);
         }
         if (!classes.containsKey(key)) {
-            cmdClass = Class.forName(key);//загружает класс
+            cmdClass = Class.forName(key);
             classes.put(cmdName, cmdClass);
         } else {
             cmdClass = classes.get(cmdName);
         }
-        command = (CalcCommand) cmdClass.newInstance();//newInstance() возвращает объет обобщенного типа Object
-
+        command = (CalcCommand) cmdClass.newInstance();
         return command;
     }
 }
