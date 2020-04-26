@@ -14,7 +14,7 @@ public class Define implements CalcCommand
     public void execute(Context context, List<String> myArgs) throws CommandExecuteException
     {
         if (myArgs.size() < 2) {
-            throw new CommandExecuteException("You may use DEFINE as \"DEFINE paramName paramValue\"!");
+            throw new CommandExecuteException("incorrect amount of args");
         }
         String constValueStr = null;
         try {
