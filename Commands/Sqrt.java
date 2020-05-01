@@ -3,9 +3,10 @@ package Commands;
 import Factory.CalcCommand;
 import Factory.CommandExecuteException;
 import Factory.Context;
-
+import Factory.Main;
 import java.util.EmptyStackException;
 import java.util.List;
+import java.util.logging.Level;
 
 public class Sqrt implements CalcCommand
 {
@@ -14,15 +15,16 @@ public class Sqrt implements CalcCommand
     {
         double a;
         try {
+            Main.LOGGER.log(Level.INFO,"get number");
             a = context.popFromStack();
         } catch (EmptyStackException e) {
-            throw new CommandExecuteException("Cannot execute command because stack is empty", e);
+            throw new CommandExecuteException("stack is empty", e);
         }
-        if (a < 0.0) {
-            throw new CommandExecuteException("Argumet of sqrt commant cant be less zero");
+        if (a < 0) {
+            throw new CommandExecuteException("arg is less than zero");
         }
         double result = Math.sqrt(a);
-
+        Main.LOGGER.log(Level.INFO,"get result");
         context.pushToStack(result);
     }
 }
