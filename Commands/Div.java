@@ -3,9 +3,10 @@ package Commands;
 import Factory.CalcCommand;
 import Factory.CommandExecuteException;
 import Factory.Context;
-
+import Factory.Main;
 import java.util.EmptyStackException;
 import java.util.List;
+import java.util.logging.Level;
 
 public class Div implements CalcCommand
 {
@@ -17,16 +18,19 @@ public class Div implements CalcCommand
         double a;
         double b;
         try {
+            Main.LOGGER.log(Level.INFO,"get first number");
             b = context.popFromStack();
+            Main.LOGGER.log(Level.INFO,"get second number");
             a = context.popFromStack();
         } catch (EmptyStackException e) {
-            throw new CommandExecuteException("Cannot execute command because stack is empty ", e);
+            Main.LOGGER.log(Level.INFO,"error: " + e);
+            throw new CommandExecuteException("stack is empty ", e);
         }
-        if (Math.abs(a) < EPSILON) {
-            throw new CommandExecuteException("Second argument div command must be not zero");
+        if (b == 0) {
+            throw new CommandExecuteException("division by zero");
         }
-
         double result = a / b;
+        Main.LOGGER.log(Level.INFO,"get result");
         context.pushToStack(result);
     }
 }
