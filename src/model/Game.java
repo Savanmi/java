@@ -2,74 +2,155 @@ package model;
 
 import controller.Controller;
 import view.StartWindow;
-import view.Render;
 
-import java.awt.event.KeyEvent;
+import java.awt.*;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Game {
+    List<GameObserver> observers;
 
     public static final int tubesDistance = 100;
+    private GameTimer gameTimer;
+    private Thread gameThread;
+    RecordBook recordBook;
 
     private int tubesDist;
     private Bird bird;
     private ArrayList<Tube> tubes;
-    private Controller keyboard;
     public int score;
     public Boolean gameover;
     public Boolean started;
 
+    public boolean isStarted(){
+        return started;
+    }
+
+    public boolean isGameOver(){
+        return gameover;
+    }
+
+
     public Game() {
-        keyboard = Controller.getInstance();
-        restart();
-    }
-
-    public void update() {
-        isStarted();
-        if (!started) {
-            return;
-        }
-        isRestarted();
-        bird.update();
-        if (gameover) {
-            return;
-        }
-        moveTubes();
-        checkForCollisions();
-    }
-
-    public void restart() {
+        observers = new ArrayList<>();
         started = false;
         gameover = false;
+        recordBook = initRecordBook();
 
         score = 0;
         tubesDist = 0;
 
         bird = new Bird();
-        tubes = new ArrayList<Tube>();
+        tubes = new ArrayList<>();
+        Controller.getInstance().setGame(this);
     }
 
-    private void isStarted() {
-    if (!started && keyboard.pressed(KeyEvent.VK_SPACE)) {
-            started = true;
-       }
+
+    public void subscribeToTheGameProcess(GameObserver observer){
+        observers.add(observer);
+        noifySubscribersBirdInfo();
+        noifySubscribersTubeInfo();
     }
 
-    private void isRestarted() {
-        if (keyboard.pressed(KeyEvent.VK_ENTER) ) {
-            restart();
+    public void unsubscribeFromTheGameProcess(GameObserver observer){
+        observers.remove(observer);
+    }
+
+
+
+    private void noifySubscribersBirdInfo(){
+        Point currentPoint = bird.getCoordinates();
+        for(GameObserver observer : observers){
+            observer.updateBirdCoordinates(currentPoint);
         }
     }
 
-    public ArrayList<Render> getRenders() {
-        ArrayList<Render> renders = new ArrayList<Render>();
-        renders.add(new Render(0, 0, "C:\\Users\\Анастасия\\BIRD\\src\\images\\ФОН.png"));
-        for (Tube t : tubes)
-            renders.add(t.getRender());
-        renders.add(new Render(0, 0, "C:\\Users\\Анастасия\\BIRD\\src\\images\\ЗЕМЛЯ.png"));
-        renders.add(bird.getRender());
-        return renders;
+    private void noifySubscribersTubeInfo(){
+        List<TubeInfo> tubeInfoList = new ArrayList<>();
+
+        for(Tube tube : tubes){
+            tubeInfoList.add(tube.getTubeInfo());
+        }
+
+        for(GameObserver observer : observers){
+            observer.updateTubeInfo(tubeInfoList);
+        }
     }
+
+
+    private RecordBook initRecordBook() {
+        try {
+            FileInputStream fileInputStream = new FileInputStream("src/recordBook.out");
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+            return (RecordBook) objectInputStream.readObject();
+
+            /// Доработать закрытие файлов
+        } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
+            return new RecordBook();
+        }
+    }
+
+    private void saveRecordBook(){
+        try{
+            FileOutputStream fileOutputStream = new FileOutputStream("src/recordBook.out");
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+            objectOutputStream.writeObject(recordBook);
+            objectOutputStream.close();
+        } catch (IOException ex){
+            ex.printStackTrace();
+        }
+    }
+
+    public RecordBook getRecordBook() {
+        return recordBook;
+    }
+
+    public void startGame(){
+        if (!started) {
+            started = true;
+            gameTimer = new GameTimer(this);
+            gameThread = new Thread(gameTimer);
+            gameThread.start();
+        }
+    }
+
+    public void restart(){
+        score = 0;
+        tubesDist = 0;
+        bird = new Bird();
+        tubes = new ArrayList<>();
+        gameover = false;
+    }
+
+    void endGame(){
+        if(!gameover) {
+            recordBook.addNewRecord(score);
+        }
+        gameover = true;
+        bird.dead = true;
+        saveRecordBook();
+    }
+
+
+
+
+    public void jump(){
+        bird.jump();
+    }
+
+    public void update() {
+        bird.update();
+        if (gameover) {
+            return;
+        }
+        moveTubes();
+        noifySubscribersTubeInfo();
+        noifySubscribersBirdInfo();
+        checkForCollisions();
+    }
+
 
     private void moveTubes() {
         tubesDist--;
@@ -104,9 +185,9 @@ public class Game {
     private void checkForCollisions() {
 
         for (Tube t : tubes) {
-            if (t.collides(bird.x, bird.y, bird.width, bird.height ) || bird.y + bird.height > StartWindow.HEIGHT - 80) {
-                gameover = true;
-                bird.dead = true;
+            if (t.collides(bird.x, bird.y, bird.width, bird.height )
+                    || (bird.y + bird.height > StartWindow.HEIGHT - 80)) {
+                endGame();
             } else if (t.x == bird.x && t.orientation.equals("ВЕРХ")) {
                 score++;
             }
