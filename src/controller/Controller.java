@@ -1,15 +1,17 @@
 package controller;
 
+import model.Game;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class Controller implements KeyListener {
 
     private static Controller controller;
-    private boolean[] keys;
+    private Game game;
 
-    public Controller() {
-        keys = new boolean[256];
+    public void setGame(Game game){
+        this.game = game;
     }
 
     public static Controller getInstance() {
@@ -18,25 +20,28 @@ public class Controller implements KeyListener {
         }
         return controller;
     }
+
+    @Override
     public void keyTyped(KeyEvent e) {}
 
+    @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() >= 0 && e.getKeyCode() < keys.length) {
-            keys[e.getKeyCode()] = true;
+        if(e.getKeyCode() == KeyEvent.VK_SPACE) {
+            if(!game.started) {
+                game.startGame();
+            }
+
+            game.jump();
+        }
+
+        if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+            if(game.gameover) {
+                game.restart();
+            }
         }
     }
 
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() >= 0 && e.getKeyCode() < keys.length) {
-            keys[e.getKeyCode()] = false;
-      }
-    }
+    @Override
+    public void keyReleased(KeyEvent e) {}
 
-    public boolean pressed(int key) {
-
-        if (key >= 0 && key < keys.length) {
-            return keys[key];
-        }
-        return false;
-    }
 }
